@@ -145,7 +145,30 @@ async function run() {
       }
     });
 
-  
+    // UPDATE LISTING
+    app.put("/listings/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedListing = req.body;
+
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          name: updatedListing.name,
+          category: updatedListing.category,
+          price: updatedListing.price,
+          location: updatedListing.location,
+          image: updatedListing.image,
+        },
+      };
+
+      try {
+        const result = await listingCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } catch (err) {
+        console.error("Update error:", err);
+        res.status(500).send({ error: "Failed to update listing" });
+      }
+    });
 
 
 
