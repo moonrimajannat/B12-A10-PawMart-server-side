@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 require('dotenv').config();
@@ -25,6 +25,7 @@ async function run() {
   try {
 
     const listingCollection = client.db('PawMart').collection('listingCollection');
+    const orderCollection = client.db('PawMart').collection('orderCollection');
 
     app.get('/listings', async (req, res) => {
       const cursor = listingCollection.find();
@@ -57,6 +58,63 @@ async function run() {
         listingId: result.insertedId
       });
 
+    });
+
+
+    app.get("/listings/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+
+        const listing = await listingCollection.findOne(query);
+        console.log(listing);
+
+        if (!listing) {
+          return res.status(404).json({ error: "Listing not found" });
+        }
+
+        res.send(listing);
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Server error" });
+      }
+    });
+
+
+    app.post("/orders", async (req, res) => {
+      try {
+        const order = req.body;
+
+        if (!order.buyerEmail || !order.listingId) {
+          return res.status(400).json({ error: "Missing required fields" });
+        }
+
+        const existsQuery = {
+          buyerEmail: order.buyerEmail,
+          listingId: order.listingId,
+        };
+
+        const existingOrder = await orderCollection.findOne(existsQuery);
+
+        if (existingOrder) {
+          return res.status(400).json({
+            error: "You already placed an order for this listing",
+          });
+        }
+
+        // Insert new order
+        const result = await orderCollection.insertOne(order);
+
+        return res.status(200).json({
+          success: true,
+          message: "Order placed successfully",
+          orderId: result.insertedId,
+        });
+
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Server error" });
+      }
     });
 
 
