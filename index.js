@@ -118,6 +118,35 @@ async function run() {
     });
 
 
+    app.get("/my-listings/:email", async (req, res) => {
+      try {
+        const email = req.params.email;
+        const result = await listingCollection.find({ email }).toArray();
+        res.send(result);
+
+      } catch (error) {
+        res.status(500).json({ error: "Server error" });
+      }
+    });
+
+
+    app.delete("/listings/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+
+        const result = await listingCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+
+        res.send(result);
+
+      } catch (error) {
+        res.status(500).json({ error: "Server error" });
+      }
+    });
+
+  
+
 
 
 
