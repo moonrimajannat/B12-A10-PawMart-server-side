@@ -25,12 +25,40 @@ async function run() {
   try {
 
     const listingCollection = client.db('PawMart').collection('listingCollection');
-    
+
     app.get('/listings', async (req, res) => {
       const cursor = listingCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     })
+
+    app.post('/listings', async (req, res) => {
+      const listing = req.body;
+
+      if (!listing.email) {
+        return res.status(400).json({ error: "Email are required" });
+      }
+
+      const existing = await listingCollection.findOne({
+        email: listing.email,
+        name: listing.name
+      });
+
+      console.log(existing)
+
+      if (existing) {
+        return res.status(409).json({ error: "You have already added this listing" });
+      }
+
+      const result = await listingCollection.insertOne(listing);
+
+      res.status(201).json({
+        message: "Listing added successfully",
+        listingId: result.insertedId
+      });
+
+    });
+
 
 
 
@@ -56,8 +84,8 @@ async function run() {
 run().catch(console.dir);
 
 
-app.get("/", (req, res) =>{
-    res.send('user server is available');
+app.get("/", (req, res) => {
+  res.send('user server is available');
 })
 
 app.listen(port, () => {
